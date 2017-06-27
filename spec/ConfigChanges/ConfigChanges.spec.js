@@ -47,6 +47,7 @@ var PluginInfo = require('../../src/PluginInfo/PluginInfo');
 var ConfigParser = require('../../src/ConfigParser/ConfigParser');
 var xml = path.join(__dirname, '../fixtures/test-config.xml');
 var editconfig_xml = path.join(__dirname, '../fixtures/test-editconfig.xml');
+var configfile_xml = path.join(__dirname, '../fixtures/test-configfile.xml');
 var cfg = new ConfigParser(xml);
 
 // TODO: dont do fs so much
@@ -376,6 +377,18 @@ describe('config-changes module', function() {
                     expect(sdk.attrib['android:minSdkVersion']).toEqual('5');
                     expect(sdk.attrib['android:maxSdkVersion']).toBeUndefined();
                 });
+
+                it('should append new children to XML document tree', function() {
+                    var configfile_cfg = new ConfigParser(configfile_xml);
+                    var platformJson = PlatformJson.load(plugins_dir, 'android');
+                    var munger = new configChanges.PlatformMunger('android', temp, platformJson, pluginInfoProvider);
+                    munger.add_config_changes(configfile_cfg, true).save_all();
+                    var am_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(temp, 'AndroidManifest.xml'), 'utf-8')));
+                    var activity = am_xml.find('./application/activity[@android:name="com.foo.Bar"]');
+                    expect(activity).toBeDefined();
+                    expect(activity.attrib['android:label']).toEqual('@string/app_name');
+                });
+
                 it('should throw error for conflicting plugin config munge with config.xml config munge', function() {
                     shell.cp('-rf', editconfigplugin_two, plugins_dir);
                     var platformJson = PlatformJson.load(plugins_dir, 'android');
