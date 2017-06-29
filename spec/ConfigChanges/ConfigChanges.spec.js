@@ -389,6 +389,16 @@ describe('config-changes module', function() {
                     expect(activity.attrib['android:label']).toEqual('@string/app_name');
                 });
 
+                // testing the "after" attribute of the <config-file> tag in config.xml
+                it('should append new children to XML document tree in the correct order', function() {
+                    var configfile_cfg = new ConfigParser(configfile_xml);
+                    var platformJson = PlatformJson.load(plugins_dir, 'android');
+                    var munger = new configChanges.PlatformMunger('android', temp, platformJson, pluginInfoProvider);
+                    munger.add_config_changes(configfile_cfg, true).save_all();
+                    var am_file = fs.readFileSync(path.join(temp, 'AndroidManifest.xml'), 'utf-8');
+                    expect(am_file.indexOf('android:name="zoo"')).toBeLessThan(am_file.indexOf('android:name="com.foo.Bar"'));
+                });
+
                 it('should throw error for conflicting plugin config munge with config.xml config munge', function() {
                     shell.cp('-rf', editconfigplugin_two, plugins_dir);
                     var platformJson = PlatformJson.load(plugins_dir, 'android');
